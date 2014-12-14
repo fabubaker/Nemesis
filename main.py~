@@ -1,0 +1,330 @@
+"""
+Sample Python/Pygame Programs
+Simpson College Computer Science
+http://programarcadegames.com/
+http://simpson.edu/computer-science/
+ 
+From:
+http://programarcadegames.com/python_examples/f.php?file=move_with_walls_example
+ 
+Explanation video: http://youtu.be/8IRyt7ft7zg
+ 
+Part of a series:
+http://programarcadegames.com/python_examples/f.php?file=move_with_walls_example.py
+http://programarcadegames.com/python_examples/f.php?file=maze_runner.py
+http://programarcadegames.com/python_examples/f.php?file=platform_jumper.py
+http://programarcadegames.com/python_examples/f.php?file=platform_scroller.py
+http://programarcadegames.com/python_examples/f.php?file=platform_moving.py
+http://programarcadegames.com/python_examples/sprite_sheets/
+"""
+ 
+import pygame
+from GameObjects import *
+from MapGenerator import *
+
+"""
+Global constants
+"""
+ 
+# Map
+mapfile1 = "maps/map1.txt"
+mapfile2 = "maps/map2.txt"
+mapfile3 = "maps/map3.txt"
+mapfile4 = "maps/map4.txt"
+mapfile5 = "maps/map5.txt"
+mapfile6 = "maps/map6.txt"
+mapfile7 = "maps/map7.txt"
+mapfile8 = "maps/map8.txt"
+
+# Colors
+BLACK    = (   0,   0,   0)
+WHITE    = ( 255, 255, 255)
+BLUE     = (   0,   0, 255)
+ 
+# Screen dimensions				
+SCREEN_WIDTH  = 800     #Maptxt files must be 16 lines in width 
+SCREEN_HEIGHT = 700		#and 14 lines in height.
+ 
+# Call this function so the Pygame library can initialize itself
+pygame.init()
+ 
+# Create an 800x600 sized screen
+screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+ 
+# Set the title of the window
+pygame.display.set_caption('Test')
+ 
+'''Pygame Spite Groups'''
+
+# List to hold tiles and walls.
+tiles_walls_list = pygame.sprite.Group()
+ 
+# Make the walls. (x_pos, y_pos, width, height)
+wall_list = pygame.sprite.Group()
+ 
+# List to hold tiles.
+tile_list = pygame.sprite.Group()
+
+# List to hold recursion bombs
+bombs_list = pygame.sprite.Group()
+#How many bombs on stage?
+bomb_count = 0
+
+#List to hold Enemy viruses
+virus_list = pygame.sprite.Group()
+
+#List to hold Enemy bugs
+bug_list = pygame.sprite.Group()
+
+#List that holds all enemies.
+all_enemies_list = pygame.sprite.Group()
+
+'''Generate Stages'''
+
+currentStage = 4
+
+Stage1 = Stage(mapfile1)
+Stage1.generateMap()
+
+Stage2 = Stage(mapfile2)
+
+Stage3 = Stage(mapfile3)
+
+Stage4 = Stage(mapfile4)
+
+Stage5 = Stage(mapfile5)
+
+Stage6 = Stage(mapfile6)
+
+Stage7 = Stage(mapfile7)
+
+Stage8 = Stage(mapfile8)
+
+#map dictionary
+mapDict = {1:Stage1, 2:Stage2, 3:Stage3,4:Stage4,5:Stage5,6:Stage6,7:Stage7,8:Stage8}
+    
+clock = pygame.time.Clock()
+ 
+#Begin game with Stage1.
+wall_list,tile_list,tiles_walls_list, virus_list, bug_list = Stage1.drawMap(wall_list,tile_list,tiles_walls_list, virus_list, bug_list)
+
+#Group together all enemy sprites.
+all_enemies_list.add(virus_list)
+all_enemies_list.add(bug_list)
+
+#Add bugs and viruses and walls to master list. This is for collision detection
+#for enemy objects only.
+all_collide_list = pygame.sprite.Group()
+all_collide_list.add(virus_list)
+all_collide_list.add(bug_list)
+all_collide_list.add(wall_list)
+
+#Update collision objects for all enemy sprites in current stage.
+Stage1.feedCollideObjs(all_collide_list)
+
+# Create the player object
+player = Player(0, 250)
+player.walls = wall_list       #Feed the player the objects to check for collision detection.
+player.bombs = bombs_list      #Feed the player the bombs for shooting.
+
+'''Gameloop'''
+
+GameOver = False
+
+while not GameOver:
+ 
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            GameOver = True
+ 
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                player.direction = "W"
+                player.move = True
+                player.changespeed(-3, 0)
+            elif event.key == pygame.K_RIGHT:
+                player.direction = "E"
+                player.move = True
+                player.changespeed(3, 0)
+            elif event.key == pygame.K_UP:
+                player.direction = "N"
+                player.move = True
+                player.changespeed(0, -3)
+            elif event.key == pygame.K_DOWN:
+                player.direction = "S"
+                player.move = True
+                player.changespeed(0, 3)
+            elif event.key == pygame.K_a:
+                if bomb_count <= 1:
+                    if player.direction == "N":
+                        Bomb = RecursionBomb()
+                        Bomb.rect.x = player.rect.x
+                        Bomb.rect.y = player.rect.y-60
+                    elif player.direction == "S":
+                        Bomb = RecursionBomb()
+                        Bomb.rect.x = player.rect.x
+                        Bomb.rect.y = player.rect.y+50
+                    elif player.direction == "E":
+                        Bomb = RecursionBomb()
+                        Bomb.rect.x = player.rect.x+50
+                        Bomb.rect.y = player.rect.y
+                    elif player.direction == "W":
+                        Bomb = RecursionBomb()
+                        Bomb.rect.x = player.rect.x-60
+                        Bomb.rect.y = player.rect.y
+                    
+                    bombOverlap_hit_list = pygame.sprite.spritecollide(Bomb, bombs_list, False)
+                    if len(bombOverlap_hit_list) == 0:
+                        bomb_count += 1
+                        bombs_list.add(Bomb)
+            		
+
+            elif event.key == pygame.K_s:
+                #Check if player is in range of bomb.
+                bombshoot_hit_list = pygame.sprite.spritecollide(player, bombs_list, False)
+                if len(bombshoot_hit_list) > 0:
+                    #Prevent initiaitng bombs before blitting them.
+                    for bombs in bombshoot_hit_list:
+                        bombs.move = True
+                    
+                
+        
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                player.move = False
+                player.changespeed(3, 0)
+            elif event.key == pygame.K_RIGHT:
+                player.move = False
+                player.changespeed(-3, 0)
+            elif event.key == pygame.K_UP:
+                player.move = False
+                player.changespeed(0, 3)
+            elif event.key == pygame.K_DOWN:
+                player.move = False
+                player.changespeed(0, -3)
+ 
+    
+    
+    for bombs in bombs_list:
+        bombs.shoot(player.direction)
+
+        enemy_hit_list = pygame.sprite.spritecollide(bombs, all_enemies_list, False)
+        for enemy in all_enemies_list:
+			enemy.all_collide_list.add(bombs)
+        
+        if bombs.move == True:
+	        #Check if bomb hits an enemy.
+	    	enemy_hit_list = pygame.sprite.spritecollide(bombs, all_enemies_list, True)
+	        if enemy_hit_list != []:
+	        	bombs_list.remove(bombs)
+	        	bomb_count -= 1
+	        		        	
+		#Check if bomb hits another bomb.
+        temp_bombs_list = bombs_list.copy()
+        temp_bombs_list.remove(bombs)
+        bombshoot_hit_list = pygame.sprite.spritecollide(bombs, temp_bombs_list, False)
+        if bombshoot_hit_list:
+            bombs_list.empty()
+            bomb_count = 0
+
+        #Check if bomb is out of screen.
+        if bombs.rect.y < 0 or bombs.rect.y > 700:
+            #Remove bomb from screen
+            bombs_list.remove(bombs)
+            bomb_count -= 1
+        #Check if bomb is out of screen.
+        elif bombs.rect.x < 0 or bombs.rect.x > 800:
+            #Remove bomb from screen
+            bombs_list.remove(bombs)
+            bomb_count -= 1
+    
+	#Check for player collision with enemies.
+    enemy_hit_list = pygame.sprite.spritecollide(player, all_enemies_list, False)
+    for enemy in enemy_hit_list:
+        #Reduce health
+        player.health -= 1
+        
+        #Enemy delfects in another direction.
+        #Enemy is moving right.
+        #if enemy.dx > 0:
+        #    enemy.rect.right = player.rect.left
+        #elif enemy.dx <= 0:
+        #    enemy.rect.right = player.rect.left
+        enemy.dx = -enemy.dx
+        enemy.rect.x += enemy.dx
+        
+        #Enemy is moving down.
+        #if enemy.dy > 0:
+        #    enemy.rect.bottom = player.rect.top
+        #Enemy is moving up.
+        #elif enemy.dy <= 0:
+        #    enemy.rect.top = player.rect.bottom
+        enemy.dy = -enemy.dy
+        enemy.rect.y += enemy.dy 
+        
+
+    #Update player position on screen based on changed input values.
+    player.update()
+
+    if player.rect.x > 780:
+    	#Clear all level sprites.
+        wall_list.empty()
+        tile_list.empty()
+        tiles_walls_list.empty() 
+        virus_list.empty()
+        bug_list.empty()
+        all_enemies_list.empty()
+        all_collide_list.empty()
+        bombs_list.empty()
+        bomb_count = 0
+
+        currentStage += 1
+
+        mapDict[currentStage].generateMap()
+        
+        wall_list,tile_list,tiles_walls_list, virus_list, bug_list = mapDict[currentStage].drawMap(wall_list,tile_list,tiles_walls_list, virus_list, bug_list)
+        all_enemies_list.add(virus_list)
+        all_enemies_list.add(bug_list)
+
+        #Add bugs and viruses and walls to master list. This is for collision detection
+        #for enemy objects only.
+        all_collide_list = pygame.sprite.Group()
+        all_collide_list.add(virus_list)
+        all_collide_list.add(bug_list)
+        all_collide_list.add(wall_list)
+
+        mapDict[currentStage].feedCollideObjs(all_collide_list)
+        
+        player.walls = wall_list       #Feed the player the objects to check for collision detection.
+        player.bombs = bombs_list  
+
+        #Respawn player in new level. 
+        player.rect.x = 0
+        player.rect.y = 250
+
+    print player.health
+    if player.health <= 0:
+        GameOver = True
+
+    screen.fill(BLACK)
+
+    all_enemies_list.update()
+
+    #Draw all tiles and walls on screen.
+    tiles_walls_list.draw(screen)
+
+    #Draw all those pesky lil bugs and draw all da viri, virii, viruses, virus?
+    all_enemies_list.draw(screen)
+
+    #Draw all da bombs.
+    bombs_list.draw(screen)
+
+    #Draw the player along with his new position.
+    screen.blit(player.image, player.rect)
+    
+    
+    pygame.display.flip()
+ 
+    clock.tick(30)
+ 
+pygame.quit()
