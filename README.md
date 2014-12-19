@@ -5,7 +5,7 @@ A very simple game written in Python using the Pygame library.
 
 Nemesis was a final semester project for 15-112:Fundamentals of Programming and Computer Science that I took at CMU-Qatar. The game was intended to be a top-down hacking sim/adventure game, however it's just an adventure game for now.
 
-The map and the sprites in the game were drawn using [Piskel](www.piskelapp.com). Highly recommend it for creating retro video game art.
+The map and the sprites in the game were drawn using [Piskel](http://www.piskelapp.com). Highly recommend it for creating retro video game art.
 
 Running:
 ========
